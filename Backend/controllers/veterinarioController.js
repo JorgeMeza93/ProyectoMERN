@@ -1,5 +1,6 @@
 import Veterinario from "../models/Veterinario.js";
 import generarJWT from "../helpers/generarJWT.js";
+import generarID from "../helpers/generadorID.js";
 
 const registrar = async (req, res) =>{
     const {nombre, email, password} = req.body;
@@ -64,8 +65,50 @@ const autenticar = async (req, res) =>{
         return res.status(403).json( {msg: error.message} )
     }
 }
-const olvidePassword = (req, res) =>{
-
+const olvidePassword = async (req, res) =>{
+    const { email } = req.body;
+    const existeVeterinario = await Veterinario.findOne( {email} );
+    if( !existeVeterinario ){
+        const error = new Error("El usuario no existe");
+        return res.status(400).json({ msg: error.message });
+    }
+    try {
+        existeVeterinario.token = generarID();
+        await existeVeterinario.save();
+        res.json( {msg: "Hemos enviado un email con las instrucciones"} )
+    } catch (error) {
+        console.log(error)
+    }
+}
+const comprobarToken = async (req, res) =>{
+    const { token } = req.params // Usamos params porque estamos leyendo de la URL
+    const tokenValido = await Veterinario.findOne({token});   // Verificamos que usuario fue el que solicitó el cambio de password
+    if(tokenValido){
+        //El token es válido el usuario existe
+        res.json( {msg: "Token válido, el usuario existe"} );
+    }
+    else{
+        const error = new Error("Token no válido");
+        return res.status(400).json( {msg: error.message} );
+    }
+}
+const nuevoPassword = async (req, res) =>{
+    const { token } = req.params;
+    const { password } = req.body;
+    const veterinario = await Veterinario.findOne({token:token});
+    if( !veterinario){
+        const error = new Error("Hubo un error");
+        return res.status(400).json( {msg: error.message} );
+    }
+    try {
+        veterinario.token = null;
+        veterinario.password = password;
+        await veterinario.save();
+        res.json({ msg: "Password modificado correctamente"});
+        console.log(veterinario);
+    } catch (error) {
+        console.log(error)
+    }
 }
 
-export {registrar, perfil, confirmar, autenticar, olvidePassword};
+export {registrar, perfil, confirmar, autenticar, olvidePassword, comprobarToken, nuevoPassword};
