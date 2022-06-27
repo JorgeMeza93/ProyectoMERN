@@ -11,7 +11,6 @@ const registrar = async (req, res) =>{
         const error = new Error("Usuario ya registrado");
         return res.status(400).json( {msg: error.message} );
     }
-    
     try {
         //Guardar un nuevo veterinario
         const veterinario = new Veterinario(req.body);
@@ -20,7 +19,6 @@ const registrar = async (req, res) =>{
     } catch (error) {
         console.log(error)
     }
-    
 }
 const perfil = (req, res) => {
     const { veterinario } = req;
